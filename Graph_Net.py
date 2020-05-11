@@ -88,13 +88,13 @@ class GATLayer(nn.Module):
         # nn.init.xavier_normal_(self.attn_fc.weight, gain=gain)
 
     def self_attention(self):
-        self.W_key = nn.Parameter(torch.randn(2 * self.in_dim, self.F, requires_grad=True))
-        self.W_query = nn.Parameter(torch.randn(2 * self.in_dim, self.F, requires_grad=True))
-        self.W_value = nn.Parameter(torch.randn(2 * self.in_dim, self.F, requires_grad=True))
+        self.W_key = nn.Parameter(torch.randn(self.in_dim * self.in_dim, self.in_dim, requires_grad=True))
+        self.W_query = nn.Parameter(torch.randn(self.in_dim * self.in_dim, self.in_dim, requires_grad=True))
+        self.W_value = nn.Parameter(torch.randn(self.in_dim **2, self.in_dim, requires_grad=True))
 
-        self.B_key = nn.Parameter(torch.randn(self.V, self.F, requires_grad=True))
-        self.B_query = nn.Parameter(torch.randn(self.V, self.F, requires_grad=True))
-        self.B_value = nn.Parameter(torch.randn(self.V, self.F, requires_grad=True))
+        self.B_key = nn.Parameter(torch.randn(self.V, self.in_dim, requires_grad=True))
+        self.B_query = nn.Parameter(torch.randn(self.V, self.in_dim, requires_grad=True))
+        self.B_value = nn.Parameter(torch.randn(self.V, self.in_dim, requires_grad=True))
 
     def WcCijwc_linear(self):
         self.Wc = nn.Parameter(torch.ones(self.out_dim, self.in_dim, requires_grad=True))
@@ -146,21 +146,21 @@ class GATLayer(nn.Module):
         correlation = nodes.data['correlation']
         # correlation:[32,N,N]
         correlation = correlation.view(self.View, -1)
-        # correlation:[32,2N]
+        # correlation:[32,N*N]
         keys = correlation @ self.W_key + self.B_key
         querys = correlation @ self.W_query + self.B_query
         values = correlation @ self.W_value + self.B_value
-        print("key", keys.shape)  # [V,F]
+        print("key", keys.shape)  # [V,N]
         print("query", querys.shape)
         print("vallue", values.shape)
-        # attention_scroes:[V,V]
+        # attention_scroes:[V,N]
         attention_scroes = querys @ keys.t()
-        # attention_scroes_softmax:[V,V]
+        # attention_scroes_softmax:[V,N]
         attention_scroes_softmax = F.softmax(attention_scroes, dim=1)
-        # weight_values:[V,V,F]
+        # weight_values:[V,V,N]
         weight_values = values[:, None] * attention_scroes_softmax.t()[:, :, None]
         print("weight_values", weight_values.shape)
-        # self_attention_out:[V,F]
+        # self_attention_out:[V,N]
         self_attention_out = weight_values.sum(dim=0)
         return {'attention': self_attention_out}
 
@@ -197,12 +197,13 @@ class GATLayer(nn.Module):
 
     def Ci_sum(self, ):
         print("CI_sum")
-        # correlation:[V,F,F]
+        # correlation:[V,N,N]
         correlation = self.g.nodes[:].data['correlation']
-        # self_attention_out:[V,F]
+        # self_attention_out:[V,N]
         self_attention_out = self.g.nodes[:].data['attention']
-        # Ci:[F,F]
+        # Ci:[N,N]
         Ci = self_attention_out[:, None] * correlation
+        Ci = Ci.sum(dim=0)
         return Ci
 
     def forward(self, G):
@@ -216,8 +217,8 @@ class GATLayer(nn.Module):
         # self.g.apply_nodes(self.caculateCi)
         print('after_attention')
 
-        Ci = self.Ci_sum()  # [256,256][F,F]
-        # print(Ci.shape)
+        Ci = self.Ci_sum()  # [N,N]
+        print(Ci.shape)
         Fi = self.fc1(Ci)
         Fi = torch.sigmoid(Fi)
         # print('1',Fi.shape)
