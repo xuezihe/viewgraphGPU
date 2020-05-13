@@ -29,13 +29,13 @@ if __name__ == '__main__':
     # train_list = r'C:\Users\Xue\Documents\PycharmProject\viewgraph\without_vgg\4.29_36_img_label_1models.npz'
 
     # 32view 300models_train_3label
-    train_list = r'data/5.7_32_img_3_label_300models_train.npz'
+    train_list = r'data/5.12_32_img_3_label_300models_train.npz'
 
     # 36view 22models
     # train_list = r'C:\Users\Xue\Documents\PycharmProject\viewgraph\without_vgg\4.23_36_img_label_22models.npz'
 
     # 32view_100models_eval_3label
-    eval_list = r'data/5.7_32_img_3_label_100models_eval.npz'
+    eval_list = r'data/5.12_32_img_3_label_100models_eval.npz'
 
 
     # TODO
@@ -51,11 +51,11 @@ if __name__ == '__main__':
     # 1model
     # train_cameraposition = r'C:\Users\Xue\Desktop\ML\3dviewgraph\Big_train_dataset\Big_train_dataset_PNG_32\position1model.txt'
     #32view 200models
-    train_cameraposition = r'data/5.7_32_img_3_label_300models_train_position.txt'
+    train_cameraposition = r'data/train_position.txt'
     # 32view_80models_eval
-    eval_cameraposition = r'data/5.7_32_img_3_label_100models_eval_position.txt'
+    eval_cameraposition = r'data/eval_position.txt'
 
-    device = torch.device('cuda:0')
+    device = torch.device('cuda:1')
     train_model_num = 300
     eval_model_num = 100
     Node = 32      #32 views
@@ -97,7 +97,7 @@ if __name__ == '__main__':
     eval_acc_history=[]
 
     best_model_wts =copy.deepcopy(net.state_dict())
-    savepth_path = r'checkpoint_4.30_1_200models_80models_2label.pth'
+    savepth_path = r'checkpoint_5.12_1_300models_100models_3label.pth'
 
 
 
@@ -111,8 +111,9 @@ if __name__ == '__main__':
         # for batchidx, input in enumerate(train_img):
         for batchidx in train_arr:
             print('batch',batchidx)
-            input =train_img[batchidx].to(device)
+            input = train_img[batchidx].to(device)
             label = train_label[batchidx].to(device)
+            print(input.shape)
             # print("label", label,label.shape)
             # label:[1]
             local_costheta = train_cos[batchidx].to(device)  # [V,V]([36,36])

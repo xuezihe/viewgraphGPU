@@ -11,7 +11,7 @@ import torchvision.models as models
 
 from MyUtiles import caculatecos
 
-device = torch.device('cuda:0')
+device = torch.device('cuda:1')
 
 
 def make_vggmodel():
@@ -220,13 +220,17 @@ class GATLayer(nn.Module):
         Ci = self.Ci_sum()  # [N,N]
         print(Ci.shape)
         Fi = self.fc1(Ci)
-        Fi = torch.sigmoid(Fi)
+        # Fi = torch.sigmoid(Fi)
+        # Fi =nn.functional.relu(Fi)
         # print('1',Fi.shape)
         Fi = self.fc2(Fi.t())
         # print('2',Fi.shape)
         P = self.Wf @ Fi + self.bias
         P = P.t()
         print('P', P.shape)
+        G.edata.pop('Sij')
+        G.edata.pop('Cijj')
+
         # print(P)
         # return F.softmax(P,dim=1)
         return P
